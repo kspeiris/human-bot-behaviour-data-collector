@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import { v4 as uuidv4 } from 'uuid'
+import { createSession, getSession, saveSession, clearSession } from '../utils/session'
 import { trackEvent } from '../services/api'
 
 const TrackingContext = createContext(null)
@@ -13,16 +13,20 @@ export function useTrackingContext() {
 }
 
 export function TrackingProvider({ children }) {
-  const [sessionId, setSessionId] = useState(null)
+  const [session, setSession] = useState(null)
   const [isConsented, setIsConsented] = useState(false)
   const [isTrackingActive, setIsTrackingActive] = useState(false)
 
   const initializeSession = useCallback(async () => {
-    const newSessionId = uuidv4()
-    setSessionId(newSessionId)
+    let currentSession = getSession()
+    if (!currentSession) {
+      currentSession = createSession()
+      saveSession(currentSession)
+    }
+    setSession(currentSession)
     setIsTrackingActive(true)
-    await trackEvent(newSessionId, 'session_start', null, null, '', window.location.pathname)
-    return newSessionId
+    await trackEvent(currentSession, 'session_start')
+    return currentSession
   }, [])
 
   const grantConsent = useCallback(async () => {
@@ -32,14 +36,15 @@ export function TrackingProvider({ children }) {
   }, [initializeSession])
 
   const revokeConsent = useCallback(() => {
-    if (sessionId) {
-      trackEvent(sessionId, 'session_end', null, null, '', window.location.pathname)
+    if (session?.sessionId) {
+      trackEvent(session, 'session_end')
     }
     setIsConsented(false)
     setIsTrackingActive(false)
-    setSessionId(null)
+    setSession(null)
     localStorage.removeItem('behavioural_consent')
-  }, [sessionId])
+    clearSession()
+  }, [session])
 
   useEffect(() => {
     const hasConsented = localStorage.getItem('behavioural_consent') === 'true'
@@ -50,13 +55,13 @@ export function TrackingProvider({ children }) {
 
   const value = useMemo(
     () => ({
-      sessionId,
+      session,
       isConsented,
       isTrackingActive,
       grantConsent,
       revokeConsent,
     }),
-    [sessionId, isConsented, isTrackingActive, grantConsent, revokeConsent],
+    [session, isConsented, isTrackingActive, grantConsent, revokeConsent],
   )
 
   return <TrackingContext.Provider value={value}>{children}</TrackingContext.Provider>

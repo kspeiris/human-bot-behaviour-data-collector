@@ -9,9 +9,9 @@ import { ExportPage } from './pages/ExportPage'
 import { useTracking } from './hooks/useTracking'
 
 function AppShell() {
-  const { sessionId, isTrackingActive, isConsented, grantConsent } = useTrackingContext()
+  const { session, isTrackingActive, isConsented, grantConsent } = useTrackingContext()
 
-  useTracking(sessionId, isTrackingActive)
+  useTracking(session, isTrackingActive)
 
   return (
     <>

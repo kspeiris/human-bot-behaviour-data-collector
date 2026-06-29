@@ -1,11 +1,14 @@
 const API_URL = import.meta.env.VITE_API_URL || ''
 
 function toCsv(rows) {
-  const header = ['sessionId', 'eventType', 'x', 'y', 'value', 'pageUrl', 'timestamp']
+  const header = ['SessionID', 'UserType', 'BotType', 'SessionSource', 'EventType', 'X', 'Y', 'Value', 'PageURL', 'Timestamp']
   const escapeCell = (value) => `"${String(value ?? '').replaceAll('"', '""')}"`
 
   return [header.join(','), ...rows.map((row) => [
     row.sessionId,
+    row.userType,
+    row.botType,
+    row.sessionSource,
     row.eventType,
     row.x,
     row.y,
@@ -47,9 +50,12 @@ class EventUploader {
 
 export const eventUploader = new EventUploader()
 
-export const trackEvent = async (sessionId, eventType, x = null, y = null, value = '', pageUrl = '') => {
+export const trackEvent = async (session, eventType, x = null, y = null, value = '', pageUrl = '') => {
   const eventData = {
-    sessionId,
+    sessionId: session.sessionId,
+    userType: session.userType,
+    botType: session.botType,
+    sessionSource: session.sessionSource,
     eventType,
     x: x !== null ? Number(x) : null,
     y: y !== null ? Number(y) : null,

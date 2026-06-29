@@ -11,7 +11,7 @@ function getSheet() {
   if (!sheet) {
     sheet = ss.insertSheet('BehaviourData');
     // Add headers
-    const headers = ['SessionID', 'EventType', 'X', 'Y', 'Value', 'PageURL', 'Timestamp'];
+    const headers = ['SessionID', 'UserType', 'BotType', 'SessionSource', 'EventType', 'X', 'Y', 'Value', 'PageURL', 'Timestamp'];
     sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
     sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold');
   }
@@ -26,7 +26,7 @@ function doPost(e) {
   try {
     // Parse request data
     const requestData = JSON.parse(e.postData.contents);
-    const { sessionId, eventType, x, y, value, pageUrl, timestamp } = requestData;
+    const { sessionId, userType, botType, sessionSource, eventType, x, y, value, pageUrl, timestamp } = requestData;
     
     // Validate required fields
     if (!sessionId || !eventType || !timestamp) {
@@ -36,6 +36,9 @@ function doPost(e) {
     // Prepare row data
     const rowData = [
       String(sessionId),
+      String(userType || 'Human'),
+      String(botType || 'None'),
+      String(sessionSource || 'Manual'),
       String(eventType),
       x !== null && x !== undefined ? Number(x) : null,
       y !== null && y !== undefined ? Number(y) : null,
@@ -106,7 +109,7 @@ function createResponse(success, message) {
  */
 function setupSpreadsheet() {
   const sheet = getSheet();
-  const headers = ['SessionID', 'EventType', 'X', 'Y', 'Value', 'PageURL', 'Timestamp'];
+  const headers = ['SessionID', 'UserType', 'BotType', 'SessionSource', 'EventType', 'X', 'Y', 'Value', 'PageURL', 'Timestamp'];
   sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
   sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold');
   sheet.setFrozenRows(1);
@@ -129,7 +132,7 @@ function getStatistics() {
   
   const eventCounts = {};
   events.forEach(row => {
-    const type = row[1];
+    const type = row[4];
     eventCounts[type] = (eventCounts[type] || 0) + 1;
   });
   

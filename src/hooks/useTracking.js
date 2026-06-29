@@ -5,7 +5,7 @@ import { trackEvent } from '../services/api'
 const THROTTLE_MS = 100
 const SCROLL_THROTTLE_MS = 150
 
-export function useTracking(sessionId, isActive) {
+export function useTracking(session, isActive) {
   const location = useLocation()
   const lastMouseMoveRef = useRef(0)
   const lastScrollRef = useRef(0)
@@ -14,27 +14,27 @@ export function useTracking(sessionId, isActive) {
 
   const handleMouseMove = useCallback(
     (e) => {
-      if (!isActive || !sessionId) return
+      if (!isActive || !session?.sessionId) return
 
       const now = Date.now()
       if (now - lastMouseMoveRef.current < THROTTLE_MS) return
       lastMouseMoveRef.current = now
 
-      trackEvent(sessionId, 'mousemove', e.clientX, e.clientY, '', location.pathname).catch(console.error)
+      trackEvent(session, 'mousemove', e.clientX, e.clientY, '', location.pathname).catch(console.error)
     },
-    [sessionId, isActive, location.pathname],
+    [session, isActive, location.pathname],
   )
 
   const handleClick = useCallback(
     (e) => {
-      if (!isActive || !sessionId) return
-      trackEvent(sessionId, 'click', e.clientX, e.clientY, '', location.pathname).catch(console.error)
+      if (!isActive || !session?.sessionId) return
+      trackEvent(session, 'click', e.clientX, e.clientY, '', location.pathname).catch(console.error)
     },
-    [sessionId, isActive, location.pathname],
+    [session, isActive, location.pathname],
   )
 
   const handleScroll = useCallback(() => {
-    if (!isActive || !sessionId) return
+    if (!isActive || !session?.sessionId) return
 
     const now = Date.now()
     if (now - lastScrollRef.current < SCROLL_THROTTLE_MS) return
@@ -44,40 +44,40 @@ export function useTracking(sessionId, isActive) {
     const direction = scrollY > lastScrollYRef.current ? 'down' : scrollY < lastScrollYRef.current ? 'up' : 'none'
     lastScrollYRef.current = scrollY
 
-    trackEvent(sessionId, 'scroll', null, scrollY, direction, location.pathname).catch(console.error)
-  }, [sessionId, isActive, location.pathname])
+    trackEvent(session, 'scroll', null, scrollY, direction, location.pathname).catch(console.error)
+  }, [session, isActive, location.pathname])
 
   const handleKeyDown = useCallback(
     (e) => {
-      if (!isActive || !sessionId) return
+      if (!isActive || !session?.sessionId) return
       if (['Meta', 'Control', 'Alt', 'Shift'].includes(e.key)) return
-      trackEvent(sessionId, 'keydown', null, null, e.key, location.pathname).catch(console.error)
+      trackEvent(session, 'keydown', null, null, e.key, location.pathname).catch(console.error)
     },
-    [sessionId, isActive, location.pathname],
+    [session, isActive, location.pathname],
   )
 
   useEffect(() => {
-    if (!isActive || !sessionId) return
+    if (!isActive || !session?.sessionId) return
 
     const currentPage = location.pathname
     const previousPage = previousPageRef.current
 
     if (previousPage !== currentPage) {
-      trackEvent(sessionId, 'navigation', null, null, `${previousPage} -> ${currentPage}`, currentPage).catch(console.error)
+      trackEvent(session, 'navigation', null, null, `${previousPage} -> ${currentPage}`, currentPage).catch(console.error)
       previousPageRef.current = currentPage
     }
-  }, [location.pathname, sessionId, isActive])
+  }, [location.pathname, session, isActive])
 
   useEffect(() => {
-    if (!isActive || !sessionId) return
+    if (!isActive || !session?.sessionId) return
 
     const handleBeforeUnload = () => {
-      trackEvent(sessionId, 'session_end', null, null, '', location.pathname)
+      trackEvent(session, 'session_end')
     }
 
     window.addEventListener('beforeunload', handleBeforeUnload)
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-  }, [sessionId, isActive, location.pathname])
+  }, [session, isActive])
 
   useEffect(() => {
     if (!isActive || !sessionId) return
